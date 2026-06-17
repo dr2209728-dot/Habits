@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080810;
+    --surface: #0f0f1a;
+    --card: #13131f;
+    --card-hover: #17172a;
+    --border: #1e1e30;
+    --border-active: #3a3a60;
+    --muted: #4a4a6a;
+    --soft: #8888aa;
+    --text: #e2e2ee;
+    --accent: #9b8bf4;
+    --accent-dim: rgba(155,139,244,0.15);
+    --green: #5eead4;
+    --green-dim: rgba(94,234,212,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 5rem;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    padding: 3rem 1.5rem 2rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(155,139,244,0.09) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(155,139,244,0.3);
+    border-radius: 999px;
+    padding: 0.25rem 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 7vw, 3rem);
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .hero-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    max-width: 560px;
+    margin: 2rem auto 0;
+    padding: 0 1.5rem;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.6rem 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .tab-btn.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .panel { display: none; padding: 1.5rem; max-width: 560px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ── DATE STRIP ── */
+  .date-strip {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+  .date-strip::-webkit-scrollbar { display: none; }
+
+  .date-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 40px;
+    cursor: pointer;
+  }
+
+  .date-col .d-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .date-col .d-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--soft);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .date-col.today .d-num {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .date-col .d-dots {
+    display: flex;
+    gap: 2px;
+    height: 5px;
+    align-items: center;
+  }
+
+  .d-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .d-dot.filled { background: var(--accent); }
+  .d-dot.full { background: var(--green); }
+
+  /* ── PROGRESS ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .progress-ring {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+  }
+
+  .progress-ring svg { transform: rotate(-90deg); }
+
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .progress-info { flex: 1; }
+
+  .progress-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+  }
+
+  .progress-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* ── HABIT CARDS ── */
+  .habits-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .habit-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.12s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .habit-card:active { transform: scale(0.98); }
+  .habit-card:hover { background: var(--card-hover); border-color: var(--border-active); }
+
+  .habit-card.done {
+    border-color: rgba(155,139,244,0.4);
+    background: rgba(155,139,244,0.06);
+  }
+
+  .h-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    background: var(--surface);
+    transition: background 0.2s;
+  }
+
+  .habit-card.done .h-icon { background: var(--accent-dim); }
+
+  .h-body { flex: 1; min-width: 0; }
+
+  .h-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .h-desc {
+    font-size: 0.73rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .h-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+
+  .h-tag {
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .tag-sleep { background: rgba(155,139,244,0.15); color: var(--accent); }
+  .tag-morning { background: var(--amber-dim); color: var(--amber); }
+  .tag-evening { background: var(--green-dim); color: var(--green); }
+  .tag-health { background: rgba(96,165,250,0.12); color: #60a5fa; }
+  .tag-sugar { background: rgba(248,113,113,0.12); color: #f87171; }
+
+  .h-streak {
+    font-size: 0.68rem;
+    color: var(--amber);
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  .h-check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border-active);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+    color: transparent;
+  }
+
+  .habit-card.done .h-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .section-label:first-child { margin-top: 0; }
+
+  /* ── TIP BOX ── */
+  .tip-box {
+    margin-top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 0.9rem 1.1rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .tip-box:hover { border-left-color: var(--green); }
+
+  .tip-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.35rem;
+  }
+
+  .tip-text {
+    font-size: 0.8rem;
+    color: var(--soft);
+    line-height: 1.6;
+  }
+
+  /* ── OVERVIEW TAB ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+  }
+
+  .stat-card.full { grid-column: 1 / -1; }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-value span { color: var(--accent); }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* ── HEATMAP ── */
+  .heatmap-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .heatmap-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--soft);
+    margin-bottom: 0.8rem;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .hm-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--border);
+    position: relative;
+    cursor: default;
+  }
+
+  .hm-cell[data-pct="0"] { background: var(--border); }
+  .hm-cell[data-pct="1"] { background: rgba(155,139,244,0.2); }
+  .hm-cell[data-pct="2"] { background: rgba(155,139,244,0.4); }
+  .hm-cell[data-pct="3"] { background: rgba(155,139,244,0.6); }
+  .hm-cell[data-pct="4"] { background: rgba(155,139,244,0.85); }
+  .hm-cell[data-pct="5"] { background: var(--green); }
+
+  .hm-day-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .hm-day-label {
+    text-align: center;
+    font-size: 0.55rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ── PER HABIT BARS ── */
+  .habit-bar-list { display: flex; flex-direction: column; gap: 0.7rem; }
+
+  .habit-bar-row { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  .habit-bar-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .habit-bar-name {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--soft);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .habit-bar-pct {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .habit-bar-track {
+    height: 5px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .habit-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.6s ease;
+  }
+
+  .current-streak-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+  }
+
+  .cs-label { font-size: 0.65rem; color: var(--muted); }
+  .cs-fire { font-size: 0.72rem; }
+  .cs-num { font-size: 0.72rem; font-weight: 700; color: var(--amber); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">Advanced Habit Stack</div>
+  <h1>Baue deine<br><span>beste Version</span></h1>
+  <p class="hero-sub">7 Habits. Jeden Tag. Konsistenz ist alles.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('today')">Heute</button>
+  <button class="tab-btn" onclick="switchTab('overview')">Übersicht</button>
+</div>
+
+<!-- TODAY PANEL -->
+<div class="panel active" id="panel-today">
+  <div class="date-strip" id="dateStrip"></div>
+  <div id="editBanner" style="display:none; background:var(--accent-dim); border:1px solid var(--accent); border-radius:10px; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.78rem; color:var(--accent); display:flex; justify-content:space-between; align-items:center;">
+    <span id="editBannerText"></span>
+    <button onclick="selectDate(todayKey)" style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;">Zu heute</button>
+  </div>
+
+  <div class="progress-row">
+    <div class="progress-ring">
+      <svg width="56" height="56" viewBox="0 0 56 56">
+        <circle class="ring-bg" cx="28" cy="28" r="22"/>
+        <circle class="ring-fill" id="ringFill" cx="28" cy="28" r="22"
+          stroke-dasharray="138.2"
+          stroke-dashoffset="138.2"/>
+      </svg>
+      <div class="ring-label" id="ringLabel">0/7</div>
+    </div>
+    <div class="progress-info">
+      <div class="progress-title" id="progressTitle">Leg los 💪</div>
+      <div class="progress-sub" id="progressSub">Kein Habit ist zu klein</div>
+    </div>
+  </div>
+
+  <p class="section-label">Abend-Vorbereitung</p>
+  <div class="habits-list" id="eveningList"></div>
+
+  <p class="section-label">Morgen-Routine</p>
+  <div class="habits-list" id="morningList"></div>
+
+  <p class="section-label">Irgendwann am Tag</p>
+  <div class="habits-list" id="dayList"></div>
+
+  <div style="margin-top: 1.5rem;">
+    <p class="section-label">Gewichtsverlauf</p>
+
+    <div id="weightInputSection" style="display:none;">
+      <div class="habit-card" style="cursor:default;" id="weightInputCard">
+        <div class="h-icon">⚖️</div>
+        <div class="h-body" style="width:100%;">
+          <div class="h-name">Gewicht eintragen</div>
+          <div class="h-desc" style="margin-bottom:0.5rem;">Zielgewicht: 85 kg</div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="number" step="0.1" id="weightInput" placeholder="z.B. 92.5"
+              style="background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.5rem 0.7rem; font-size:0.85rem; width:100px; font-family:'Inter',sans-serif;">
+            <span style="font-size:0.8rem; color:var(--muted);">kg</span>
+            <button onclick="saveWeight()" style="background:var(--accent); border:none; color:white; border-radius:8px; padding:0.5rem 1rem; font-size:0.78rem; font-weight:600; cursor:pointer; margin-left:auto;">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="heatmap-wrap" style="margin-top:0.75rem;">
+      <div class="heatmap-title">Verlauf zum Zielgewicht (85 kg)</div>
+      <canvas id="weightChart" width="500" height="200" style="width:100%; height:160px;"></canvas>
+      <div id="weightEmptyState" style="display:none; text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.78rem;">
+        Noch keine Einträge — sonntags kannst du hier dein Gewicht eintragen.
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box" onclick="rotateTip()" title="Klick für neuen Tipp">
+    <p class="tip-label">💡 Tipp des Tages — klick für mehr</p>
+    <p class="tip-text" id="tipText"></p>
+  </div>
+</div>
+
+<!-- OVERVIEW PANEL -->
+<div class="panel" id="panel-overview">
+  <div class="overview-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="statStreak">0</div>
+      <div class="stat-label">Tage in Folge<br>alle Habits ✓</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0<span>%</span></div>
+      <div class="stat-label">Gesamtrate<br>letzte 28 Tage</div>
+    </div>
+    <div class="stat-card full">
+      <div class="stat-value" id="statBest">–</div>
+      <div class="stat-label">Bester Habit (Einhalteqoute)</div>
+    </div>
+  </div>
+
+  <div class="heatmap-wrap">
+    <div class="heatmap-title">Letzte 28 Tage — Habits pro Tag</div>
+    <div class="hm-day-labels">
+      <div class="hm-day-label">Mo</div>
+      <div class="hm-day-label">Di</div>
+      <div class="hm-day-label">Mi</div>
+      <div class="hm-day-label">Do</div>
+      <div class="hm-day-label">Fr</div>
+      <div class="hm-day-label">Sa</div>
+      <div class="hm-day-label">So</div>
+    </div>
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+  </div>
+
+  <p class="section-label">Habit-Analyse</p>
+  <div class="habit-bar-list" id="habitBars"></div>
+</div>
+
+<script>
+const HABITS = [
+  {
+    id: 'sleep',    icon: '🌙', name: 'Feste Schlafenszeit',
+    desc: '22:30 Uhr ins Bett — auch am Wochenende',
+    tag: 'tag-sleep', tagLabel: 'Schlaf', group: 'evening',
+    tips: [
+      'Stell dir 22:00 Uhr einen "Wind-down"-Alarm — das ist dein Signal, alle Bildschirme wegzulegen.',
+      'Die Einschlafzeit ist weniger wichtig als die Aufwachzeit. 6:00 Uhr konstant = stärkster Anker.',
+      'Kühle deinen Raum auf 18–19°C. Fallende Körpertemperatur ist das Einschlafsignal des Gehirns.'
+    ]
+  },
+  {
+    id: 'bluelight', icon: '🥽', name: 'Blaulichtfilterbrille',
+    desc: 'Ab 21:30 Uhr aufsetzen — mind. 1h vor dem Schlafen',
+    tag: 'tag-sleep', tagLabel: 'Schlaf', group: 'evening',
+    tips: [
+      'Blaulichtbrillen mit 99%+ Filterrate (orange Gläser) erhöhen die Melatoninproduktion um bis zu 58%.',
+      'Leg die Brille sichtbar neben dein Sofa — der visuelle Cue erinnert dich daran, sie aufzusetzen.',
+      'Kombiniere sie mit Dimmlicht: Overhead-Licht aus, nur Stehlampen nach 21 Uhr.'
+    ]
+  },
+  {
+    id: 'noscreen', icon: '📵', name: 'Kein Handy vor Schlaf',
+    desc: '45 Min vor Bett — Handy weglegen oder in anderen Raum',
+    tag: 'tag-sleep', tagLabel: 'Schlaf', group: 'evening',
+    tips: [
+      'Lad dein Handy außerhalb des Schlafzimmers — kein Handy, keine Versuchung.',
+      'Social Media vor dem Schlafen erhöht nachweislich die Einschlafzeit um 30–45 Min durch emotionale Aktivierung.',
+      'Ersetze die Scroll-Zeit durch Lesen — Bücher verlangsamen den inneren Monolog des Gehirns.'
+    ]
+  },
+  {
+    id: 'review', icon: '📓', name: 'Abend-Check-in',
+    desc: '2 Minuten: Was war gut? Was ändere ich morgen?',
+    tag: 'tag-evening', tagLabel: 'Abend', group: 'evening',
+    tips: [
+      'Schreib morgen\'s To-dos auf — dann lässt das Gehirn los und grübelt nachts weniger.',
+      'Drei Dinge die heute gut liefen reichen. Das aktiviert Dopamin und beendet den Tag positiv.',
+      'Gratitude-Journaling vor dem Schlafen senkt nachweislich Cortisol — das Stresshormon, das Schlaf blockiert.'
+    ]
+  },
+  {
+    id: 'water', icon: '💧', name: 'Wasser beim Aufwachen',
+    desc: 'Direkt nach dem Aufstehen: 500ml trinken',
+    tag: 'tag-morning', tagLabel: 'Morgen', group: 'morning',
+    tips: [
+      'Nach 7,5h Schlaf bist du leicht dehydriert. Wasser reaktiviert Stoffwechsel schneller als Kaffee.',
+      'Stell das Glas Abends schon auf den Nachttisch — null Einstiegshürde am Morgen.',
+      'Eine Prise Meersalz oder Zitronensaft verbessert die Elektrolytaufnahme.'
+    ]
+  },
+  {
+    id: 'move', icon: '🏃', name: 'Bewegung am Morgen',
+    desc: 'Mind. 10 Min bewegen — am besten draußen mit Sonnenlicht',
+    tag: 'tag-morning', tagLabel: 'Morgen', group: 'morning',
+    tips: [
+      'Morgensonnenlicht in den ersten 30 Min nach dem Aufwachen setzt die innere Uhr neu — direkt schlafverbessernder Effekt.',
+      'Kein Sport nötig: Ein schneller Spaziergang setzt Cortisol und Dopamin in die richtige Balance.',
+      'Koppel es an etwas Festes: z.B. direkt nach dem Frühstück — kein Willensakt mehr nötig.'
+    ]
+  },
+  {
+    id: 'reading', icon: '📚', name: '15 Min Lesen',
+    desc: 'Buch oder Artikel — irgendwann am Tag, kein Social Media',
+    tag: 'tag-health', tagLabel: 'Fokus', group: 'day',
+    tips: [
+      '15 Min Lesen täglich = ~12 Bücher im Jahr. Klingt wenig, ist eine der stärksten Habits langfristig.',
+      'Lesen statt Handy trainiert tiefes Fokussieren — ein immer seltenerer Skill.',
+      'Leg das Buch sichtbar auf den Tisch — physische Bücher funktionieren besser als E-Reader für den Fokus.'
+    ]
+  },
+  {
+    id: 'meditation', icon: '🧘', name: 'Meditation',
+    desc: 'Mind. 5–10 Min abends — vor dem Schlafen, nach dem Check-in',
+    tag: 'tag-evening', tagLabel: 'Abend', group: 'evening',
+    tips: [
+      'Direkt nach dem Aufwachen ist das Gehirn noch im Theta-Zustand — du kommst 3x schneller in tiefe Ruhe als tagsüber.',
+      'Kein App nötig: Einfach 5 Min still sitzen, Augen zu, nur auf den Atem fokussieren. Das reicht am Anfang.',
+      'Meditation verändert messbar die Dichte der grauen Substanz im Präfrontalen Cortex — nach nur 8 Wochen täglich.'
+    ]
+  },
+  {
+    id: 'sport', icon: '💪', name: 'Sport gemacht',
+    desc: 'Egal was — Liegestütze, Laufen, Gym. Hauptsache Bewegung',
+    tag: 'tag-health', tagLabel: 'Sport', group: 'day',
+    tips: [
+      'Konsistenz schlägt Intensität. 100 Liegestütze täglich für ein Jahr > einmal pro Woche hart trainieren.',
+      'Sport erhöht BDNF — das Düngemittel des Gehirns. Lernfähigkeit, Fokus und Stimmung steigen direkt danach.',
+      'Die 2-Minuten-Regel: Wenn du keine Lust hast, starte mit 10 Liegestützen. Meistens machst du dann einfach weiter.'
+    ]
+  },
+  {
+    id: 'nosugar', icon: '🍬', name: 'Keine Süßigkeiten',
+    desc: 'Keine Süßigkeiten, süßen Getränke oder Backwaren (Muffin etc.)',
+    tag: 'tag-sugar', tagLabel: 'Ernährung', group: 'day',
+    tips: [
+      'Flüssiger Zucker (Softdrinks, Säfte) schlägt stärker auf den Blutzucker als feste Süßigkeiten — meide ihn zuerst.',
+      'Bäckerei-Gebäck wie Muffins enthält oft 30-40g Zucker — mehr als eine ganze Tafel Schokolade.',
+      'Ersetze den Snack-Reflex durch Wasser oder ungesüßten Tee — der Heißhunger geht meist nach 10 Min vorbei.'
+    ]
+  }
+];
+
+// ── STATE ──
+let state = JSON.parse(localStorage.getItem('hs_state') || '{}');
+const today = new Date();
+const todayKey = dateKey(today);
+let selectedDate = todayKey;
+if (!state[todayKey]) state[todayKey] = {};
+
+function dateKey(d) { return d.toISOString().split('T')[0]; }
+function save() { localStorage.setItem('hs_state', JSON.stringify(state)); }
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'overview') renderOverview();
+}
+
+// ── DATE STRIP ──
+function buildDateStrip() {
+  const strip = document.getElementById('dateStrip');
+  strip.innerHTML = '';
+  const days = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = dateKey(d);
+    const dayData = state[key] || {};
+    const count = Object.values(dayData).filter(Boolean).length;
+
+    const col = document.createElement('div');
+    col.className = 'date-col' + (key === selectedDate ? ' today' : '');
+    col.style.cursor = 'pointer';
+    col.addEventListener('click', () => selectDate(key));
+
+    const dots = HABITS.slice(0, 5).map((_, idx) => {
+      const h = HABITS[idx];
+      const filled = dayData[h.id];
+      return `<div class="d-dot ${count === HABITS.length ? 'full' : filled ? 'filled' : ''}"></div>`;
+    }).join('');
+
+    col.innerHTML = `
+      <span class="d-label">${days[d.getDay()]}</span>
+      <div class="d-num">${d.getDate()}</div>
+      <div class="d-dots">${dots}</div>
+    `;
+    strip.appendChild(col);
+  }
+}
+
+function selectDate(key) {
+  selectedDate = key;
+  if (!state[selectedDate]) state[selectedDate] = {};
+  save();
+  buildDateStrip();
+  renderHabits();
+  updateProgress();
+  updateWeightSection();
+
+  const banner = document.getElementById('editBanner');
+  const text = document.getElementById('editBannerText');
+  if (selectedDate === todayKey) {
+    banner.style.display = 'none';
+  } else {
+    const d = new Date(selectedDate);
+    const dateStr = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+    text.textContent = `📝 Du bearbeitest: ${dateStr}`;
+    banner.style.display = 'flex';
+  }
+}
+
+// ── WEIGHT TRACKING (Sundays only) ──
+const TARGET_WEIGHT = 85;
+
+function isSunday(key) {
+  const d = new Date(key);
+  return d.getDay() === 0;
+}
+
+function updateWeightSection() {
+  const inputSection = document.getElementById('weightInputSection');
+  inputSection.style.display = isSunday(selectedDate) ? 'block' : 'none';
+
+  if (isSunday(selectedDate)) {
+    const input = document.getElementById('weightInput');
+    const existing = state[selectedDate] && state[selectedDate].weight;
+    input.value = existing || '';
+  }
+
+  drawWeightChart();
+}
+
+function saveWeight() {
+  const val = parseFloat(document.getElementById('weightInput').value);
+  if (!val || val <= 0) return;
+  if (!state[selectedDate]) state[selectedDate] = {};
+  state[selectedDate].weight = val;
+  save();
+  buildDateStrip();
+  drawWeightChart();
+}
+
+function getWeightEntries() {
+  return Object.keys(state)
+    .filter(k => state[k] && state[k].weight)
+    .map(k => ({ date: k, weight: state[k].weight }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function drawWeightChart() {
+  const entries = getWeightEntries();
+  const canvas = document.getElementById('weightChart');
+  const emptyState = document.getElementById('weightEmptyState');
+  const ctx = canvas.getContext('2d');
+
+  // Reset canvas resolution to match display size for crispness
+  const dpr = window.devicePixelRatio || 1;
+  const displayWidth = canvas.clientWidth || 500;
+  const displayHeight = 160;
+  canvas.width = displayWidth * dpr;
+  canvas.height = displayHeight * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+  if (entries.length === 0) {
+    canvas.style.display = 'none';
+    emptyState.style.display = 'block';
+    return;
+  }
+  canvas.style.display = 'block';
+  emptyState.style.display = 'none';
+
+  const padding = { top: 16, right: 16, bottom: 24, left: 38 };
+  const w = displayWidth - padding.left - padding.right;
+  const h = displayHeight - padding.top - padding.bottom;
+
+  const weights = entries.map(e => e.weight);
+  const allValues = [...weights, TARGET_WEIGHT];
+  let minW = Math.min(...allValues) - 2;
+  let maxW = Math.max(...allValues) + 2;
+
+  function xFor(i) {
+    if (entries.length === 1) return padding.left + w / 2;
+    return padding.left + (i / (entries.length - 1)) * w;
+  }
+  function yFor(val) {
+    return padding.top + h - ((val - minW) / (maxW - minW)) * h;
+  }
+
+  // Grid lines + Y labels
+  ctx.strokeStyle = '#1e1e30';
+  ctx.fillStyle = '#4a4a6a';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'right';
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const val = minW + ((maxW - minW) / steps) * i;
+    const y = yFor(val);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + w, y);
+    ctx.stroke();
+    ctx.fillText(val.toFixed(0), padding.left - 6, y + 3);
+  }
+
+  // Target line
+  const targetY = yFor(TARGET_WEIGHT);
+  ctx.save();
+  ctx.strokeStyle = '#5eead4';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(padding.left, targetY);
+  ctx.lineTo(padding.left + w, targetY);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#5eead4';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Ziel ${TARGET_WEIGHT}kg`, padding.left + 4, targetY - 4);
+
+  // Weight line
+  ctx.strokeStyle = '#9b8bf4';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  entries.forEach((e, i) => {
+    const x = xFor(i);
+    const y = yFor(e.weight);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Points + value labels
+  entries.forEach((e, i) => {
+    const x = xFor(i);
+    const y = yFor(e.weight);
+    ctx.fillStyle = '#9b8bf4';
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#e2e2ee';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(e.weight.toFixed(1), x, y - 8);
+  });
+
+  // X labels (first, middle, last)
+  ctx.fillStyle = '#4a4a6a';
+  ctx.font = '9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  const labelIdxs = entries.length <= 4
+    ? entries.map((_, i) => i)
+    : [0, Math.floor(entries.length / 2), entries.length - 1];
+  labelIdxs.forEach(i => {
+    const d = new Date(entries[i].date);
+    const label = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    ctx.fillText(label, xFor(i), displayHeight - 6);
+  });
+}
+
+// ── PROGRESS ──
+function updateProgress() {
+  const done = HABITS.filter(h => state[selectedDate][h.id]).length;
+  const total = HABITS.length;
+  const pct = done / total;
+  const circumference = 138.2;
+  document.getElementById('ringFill').style.strokeDashoffset = circumference * (1 - pct);
+  document.getElementById('ringLabel').textContent = `${done}/${total}`;
+
+  const titles = [
+    'Leg los 💪', 'Guter Start!', 'Weiter so 🔥',
+    'Halbzeit!', 'Fast da 🚀', 'Noch einer!',
+    'Ein letzter!', 'Perfekter Tag ⭐'
+  ];
+  const subs = [
+    'Kein Habit ist zu klein', 'Momentum aufbauen', 'Du bist im Fluss',
+    'Die Hälfte geschafft', 'Stark heute', 'Lass es nicht fallen',
+    'Hol dir den letzten!', 'Volle Punktzahl heute!'
+  ];
+  document.getElementById('progressTitle').textContent = titles[done];
+  document.getElementById('progressSub').textContent = subs[done];
+}
+
+// ── RENDER HABITS ──
+function renderHabits() {
+  ['evening', 'morning', 'day'].forEach(group => {
+    const list = document.getElementById(group + 'List');
+    list.innerHTML = '';
+    HABITS.filter(h => h.group === group).forEach(h => {
+      const done = !!state[selectedDate][h.id];
+      const streak = calcStreak(h.id);
+      const card = document.createElement('div');
+      card.className = 'habit-card' + (done ? ' done' : '');
+      card.innerHTML = `
+        <div class="h-icon">${h.icon}</div>
+        <div class="h-body">
+          <div class="h-name">${h.name}</div>
+          <div class="h-desc">${h.desc}</div>
+          <div class="h-meta">
+            <span class="h-tag ${h.tag}">${h.tagLabel}</span>
+            ${streak > 1 ? `<span class="h-streak">🔥 ${streak} Tage</span>` : ''}
+          </div>
+        </div>
+        <div class="h-check">${done ? '✓' : ''}</div>
+      `;
+      card.addEventListener('click', () => {
+        if (!state[selectedDate]) state[selectedDate] = {};
+        state[selectedDate][h.id] = !state[selectedDate][h.id];
+        save();
+        renderHabits();
+        updateProgress();
+        buildDateStrip();
+      });
+      list.appendChild(card);
+    });
+  });
+}
+
+function calcStreak(habitId) {
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = dateKey(d);
+    if (state[k] && state[k][habitId]) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ── TIPS ──
+let tipIdx = 0;
+const allTips = HABITS.flatMap(h => h.tips.map(t => `${h.icon} ${t}`));
+
+function rotateTip() {
+  tipIdx = (tipIdx + 1) % allTips.length;
+  document.getElementById('tipText').textContent = allTips[tipIdx];
+}
+
+function initTip() {
+  tipIdx = Math.floor(Math.random() * allTips.length);
+  document.getElementById('tipText').textContent = allTips[tipIdx];
+}
+
+// ── OVERVIEW ──
+function renderOverview() {
+  // Stats
+  const days28 = [];
+  for (let i = 0; i < 28; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    days28.push(dateKey(d));
+  }
+
+  // Perfect streak
+  let perfectStreak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = dateKey(d);
+    const dayDone = HABITS.filter(h => state[k] && state[k][h.id]).length;
+    if (dayDone === HABITS.length) perfectStreak++;
+    else break;
+  }
+  document.getElementById('statStreak').textContent = perfectStreak;
+
+  // Overall rate
+  let totalDone = 0;
+  days28.forEach(k => {
+    HABITS.forEach(h => { if (state[k] && state[k][h.id]) totalDone++; });
+  });
+  const rate = Math.round((totalDone / (28 * HABITS.length)) * 100);
+  document.getElementById('statTotal').innerHTML = `${rate}<span>%</span>`;
+
+  // Best habit
+  let bestHabit = null, bestRate = -1;
+  HABITS.forEach(h => {
+    const done = days28.filter(k => state[k] && state[k][h.id]).length;
+    const r = done / 28;
+    if (r > bestRate) { bestRate = r; bestHabit = h; }
+  });
+  document.getElementById('statBest').innerHTML =
+    bestHabit ? `${bestHabit.icon} ${Math.round(bestRate * 100)}<span style="font-size:1rem;color:var(--accent)">%</span>` : '–';
+
+  // Heatmap (28 days, Mon-start grid)
+  const hg = document.getElementById('heatmapGrid');
+  hg.innerHTML = '';
+
+  // Find Monday before 28 days ago
+  const start = new Date(today);
+  start.setDate(today.getDate() - 27);
+  const dayOfWeek = (start.getDay() + 6) % 7; // 0=Mon
+  start.setDate(start.getDate() - dayOfWeek);
+
+  const end = new Date(today);
+  const endDow = (end.getDay() + 6) % 7;
+  end.setDate(end.getDate() + (6 - endDow));
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const k = dateKey(new Date(d));
+    const dayState = state[k] || {};
+    const count = HABITS.filter(h => dayState[h.id]).length;
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    cell.setAttribute('data-pct', count >= HABITS.length ? '5' : count);
+    cell.title = `${k}: ${count}/${HABITS.length}`;
+    hg.appendChild(cell);
+  }
+
+  // Habit bars
+  const bars = document.getElementById('habitBars');
+  bars.innerHTML = '';
+  HABITS.forEach(h => {
+    const done = days28.filter(k => state[k] && state[k][h.id]).length;
+    const pct = Math.round((done / 28) * 100);
+    const streak = calcStreak(h.id);
+    const row = document.createElement('div');
+    row.className = 'habit-bar-row';
+    row.innerHTML = `
+      <div class="habit-bar-top">
+        <span class="habit-bar-name">${h.icon} ${h.name}</span>
+        <span class="habit-bar-pct">${pct}%</span>
+      </div>
+      <div class="habit-bar-track">
+        <div class="habit-bar-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="current-streak-row">
+        <span class="cs-label">Aktueller Streak</span>
+        <span class="cs-fire">🔥</span>
+        <span class="cs-num">${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
+      </div>
+    `;
+    bars.appendChild(row);
+  });
+}
+
+// ── INIT ──
+buildDateStrip();
+renderHabits();
+updateProgress();
+updateWeightSection();
+initTip();
+</script>
+</body>
+</html>
